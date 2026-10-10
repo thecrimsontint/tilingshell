@@ -55,3 +55,25 @@ export function getDefaultSeat(): Clutter.Seat {
 
     return Clutter.get_default_backend().get_default_seat();
 }
+
+export type CursorName = 'DEFAULT' | 'W_RESIZE' | 'N_RESIZE';
+
+// GNOME 51 dropped the Meta.Cursor enum and Meta.Display.set_cursor(): cursors
+// are now set per actor with Clutter.Actor.set_cursor_type(Clutter.CursorType).
+// The actor's cursor is also used while it holds a grab.
+export function setCursor(actor: Clutter.Actor, name: CursorName): void {
+    const act = actor as any;
+    if (act.set_cursor_type) {
+        act.set_cursor_type((Clutter as any).CursorType[name]);
+        return;
+    }
+
+    // GNOME < 51. Constants were renamed in GNOME 48 from WEST/NORTH_* to W/N_*
+    const cursors = Meta.Cursor as any;
+    const legacy = {
+        DEFAULT: 'DEFAULT',
+        W_RESIZE: 'WEST_RESIZE',
+        N_RESIZE: 'NORTH_RESIZE',
+    };
+    global.display.set_cursor(cursors[name] ?? cursors[legacy[name]]);
+}
